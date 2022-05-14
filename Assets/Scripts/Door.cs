@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 
 [RequireComponent(typeof(Collider2D))]
-public class AlarmTrigger : MonoBehaviour
+public class Door : MonoBehaviour
 {
     [HideInInspector] public UnityEvent Triggered = new UnityEvent();
     

@@ -1,13 +1,24 @@
+using System.Collections;
 using UnityEngine;
 
 public class Alarm : MonoBehaviour
 {
-    [SerializeField] private Speaker[] _speakers;
-    [SerializeField] private AlarmTrigger[] _triggers;
+    [SerializeField] private Door[] _triggers;
+    [SerializeField] private AudioClip _sound;
+    [SerializeField] private float _volumeRisingSpeed;
+    
+    private AudioSource _audioSource;
+    private Coroutine _activeCoroutine;
+    private float _timer;
     private bool isTriggered;
 
-    private void Awake()
+    private void Start()
     {
+        _audioSource = GetComponent<AudioSource>();
+        _audioSource.volume = 0;
+        _audioSource.clip = _sound;
+        _timer = 0;
+
         isTriggered = false;
 
         for (int i = 0; i < _triggers.Length; i++)
@@ -30,17 +41,53 @@ public class Alarm : MonoBehaviour
 
         if (isTriggered)
         {
-            for (int i = 0; i < _speakers.Length; i++)
-            {
-                _speakers[i].Play();
-            }
+            Play();
         }
         else
         {
-            for (int i = 0; i < _speakers.Length; i++)
-            {
-                _speakers[i].Stop();
-            }
+            Stop();
+        }
+    }
+
+    private void Play()
+    {
+        if (_activeCoroutine != null)
+        {
+            StopCoroutine(_activeCoroutine);
+        }
+
+        _audioSource.volume = 0;
+        _activeCoroutine = StartCoroutine(ChangeVolumeTo(1));
+    }
+
+    private void Stop()
+    {
+        if (_activeCoroutine != null)
+        {
+            StopCoroutine(_activeCoroutine);
+        }
+
+        _activeCoroutine = StartCoroutine(ChangeVolumeTo(0));
+    }
+
+    private IEnumerator ChangeVolumeTo(float targetValue)
+    {
+        if (targetValue != 0 && _audioSource.isPlaying == false)
+        {
+            _audioSource.loop = true;
+            _audioSource.Play();
+        }
+
+        while (_audioSource.volume != targetValue)
+        {
+            _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, targetValue, _timer);
+            _timer += Time.deltaTime * _volumeRisingSpeed;
+            yield return null;
+        }
+
+        if (targetValue == 0 && _audioSource.isPlaying)
+        {
+            _audioSource.Stop();
         }
     }
 }
