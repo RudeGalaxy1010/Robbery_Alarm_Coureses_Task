@@ -10,7 +10,7 @@ public class Alarm : MonoBehaviour
     private AudioSource _audioSource;
     private Coroutine _activeCoroutine;
     private float _timer;
-    private bool isTriggered;
+    private bool _isPlaying;
 
     private void Start()
     {
@@ -19,11 +19,11 @@ public class Alarm : MonoBehaviour
         _audioSource.clip = _sound;
         _timer = 0;
 
-        isTriggered = false;
+        _isPlaying = false;
 
         for (int i = 0; i < _triggers.Length; i++)
         {
-            _triggers[i].Triggered.AddListener(OnTriggered);
+            _triggers[i].Triggered += Switch;
         }
     }
 
@@ -31,43 +31,33 @@ public class Alarm : MonoBehaviour
     {
         for (int i = 0; i < _triggers.Length; i++)
         {
-            _triggers[i].Triggered.RemoveListener(OnTriggered);
+            _triggers[i].Triggered -= Switch;
         }
     }
 
-    public void OnTriggered()
+    private void Switch()
     {
-        isTriggered = !isTriggered;
-
-        if (isTriggered)
+        if (_isPlaying)
         {
-            Play();
+            if (_activeCoroutine != null)
+            {
+                StopCoroutine(_activeCoroutine);
+            }
+
+            _isPlaying = false;
+            _activeCoroutine = StartCoroutine(ChangeVolumeTo(0));
         }
         else
         {
-            Stop();
+            if (_activeCoroutine != null)
+            {
+                StopCoroutine(_activeCoroutine);
+            }
+
+            _isPlaying = true;
+            _audioSource.volume = 0;
+            _activeCoroutine = StartCoroutine(ChangeVolumeTo(1));
         }
-    }
-
-    private void Play()
-    {
-        if (_activeCoroutine != null)
-        {
-            StopCoroutine(_activeCoroutine);
-        }
-
-        _audioSource.volume = 0;
-        _activeCoroutine = StartCoroutine(ChangeVolumeTo(1));
-    }
-
-    private void Stop()
-    {
-        if (_activeCoroutine != null)
-        {
-            StopCoroutine(_activeCoroutine);
-        }
-
-        _activeCoroutine = StartCoroutine(ChangeVolumeTo(0));
     }
 
     private IEnumerator ChangeVolumeTo(float targetValue)
